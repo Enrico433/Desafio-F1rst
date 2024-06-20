@@ -1,0 +1,24 @@
+Python 3.12.1 (tags/v3.12.1:2305ca5, Dec  7 2023, 22:03:25) [MSC v.1937 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license()" for more information.
+>>> # Seção de Declarações das variáveis 
+... endereco = ""
+... nome = ""
+... cpf = ""
+... senha = ""
+... 
+... # Seção de Comandos, procedimento, funções, operadores, etc...
+... nome = input("Digite seu nome: ")
+... endereco = input("Digite seu endereco: ")
+... cpf = input("Digite seu cpf: ")
+... senha = input("Digite sua senha: ")
+... 
+... if senha == "123456789" and cpf == "543231467" and endereco == "Rua Alzira" and nome == "Felipe":
+...     print(f"Nome do usuario: {nome}")
+...     print("Status da conta: ativo")
+...     print("Saldo: R$7.000")
+... elif senha == "0987654321" and cpf == "43325104886" and endereco == "Rua Augusta" and nome == "Fatima":
+...     print(f"Nome de usuario: {nome}")
+...     print("Status da conta: inativo")
+...     print("Saldo indisponivel")
+... else:
+...     print("Usuario não cadastrado!")
