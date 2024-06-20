@@ -1,24 +1,115 @@
-Python 3.12.1 (tags/v3.12.1:2305ca5, Dec  7 2023, 22:03:25) [MSC v.1937 64 bit (AMD64)] on win32
-Type "help", "copyright", "credits" or "license()" for more information.
->>> # Seção de Declarações das variáveis 
-... endereco = ""
-... nome = ""
-... cpf = ""
-... senha = ""
-... 
-... # Seção de Comandos, procedimento, funções, operadores, etc...
-... nome = input("Digite seu nome: ")
-... endereco = input("Digite seu endereco: ")
-... cpf = input("Digite seu cpf: ")
-... senha = input("Digite sua senha: ")
-... 
-... if senha == "123456789" and cpf == "543231467" and endereco == "Rua Alzira" and nome == "Felipe":
-...     print(f"Nome do usuario: {nome}")
-...     print("Status da conta: ativo")
-...     print("Saldo: R$7.000")
-... elif senha == "0987654321" and cpf == "43325104886" and endereco == "Rua Augusta" and nome == "Fatima":
-...     print(f"Nome de usuario: {nome}")
-...     print("Status da conta: inativo")
-...     print("Saldo indisponivel")
-... else:
-...     print("Usuario não cadastrado!")
+import uuid
+import requests
+
+# Definição da classe Cliente
+class Cliente:
+    def __init__(self, nome, cpf_cnpj, endereco, senha, tipo):
+        self.id = uuid.uuid4()
+        self.nome = nome
+        self.cpf_cnpj = cpf_cnpj
+        self.endereco = endereco
+        self.senha = senha
+        self.tipo = tipo
+
+# Definição da classe Conta
+class Conta:
+    def __init__(self, cliente_id, agencia, saldo, status="Ativa"):
+        self.id = uuid.uuid4()
+        self.cliente_id = cliente_id
+        self.agencia = agencia
+        self.saldo = saldo
+        self.status = status
+
+# Banco de dados simulado
+clientes = []
+contas = []
+
+# Função para verificar se CPF/CNPJ é único
+def cpf_cnpj_unico(cpf_cnpj):
+    for cliente in clientes:
+        if cliente.cpf_cnpj == cpf_cnpj:
+            return False
+    return True
+
+# Função para verificar se ID e Agência são únicos
+def id_agencia_unicos(agencia):
+    for conta in contas:
+        if conta.agencia == agencia:
+            return False
+    return True
+
+# Função para cadastrar um novo cliente
+def cadastrar_cliente(nome, cpf_cnpj, endereco, senha, tipo):
+    if not cpf_cnpj_unico(cpf_cnpj):
+        raise ValueError("Erro: CPF/CNPJ já cadastrado.")
+    novo_cliente = Cliente(nome, cpf_cnpj, endereco, senha, tipo)
+    clientes.append(novo_cliente)
+    return novo_cliente.id
+
+# Função para abrir uma nova conta
+def abrir_conta(cliente_id, agencia, saldo, status="Ativa"):
+    if not id_agencia_unicos(agencia):
+        raise ValueError("Erro: Agência já cadastrada.")
+    nova_conta = Conta(cliente_id, agencia, saldo, status)
+    contas.append(nova_conta)
+    return nova_conta.id
+
+# Função para validar transferência
+def validar_transferencia(id_conta_origem, valor):
+    for conta in contas:
+        if conta.id == id_conta_origem:
+            if conta.status == "Ativa" and conta.saldo >= valor:
+                return True
+    return False
+
+# Função para realizar transferência
+def realizar_transferencia(id_conta_origem, id_conta_destino, valor):
+    if not validar_transferencia(id_conta_origem, valor):
+        raise ValueError("Erro: Transferência inválida.")
+    for conta in contas:
+        if conta.id == id_conta_origem:
+            conta.saldo -= valor
+        if conta.id == id_conta_destino:
+            conta.saldo += valor
+    try:
+        notificar_pagamento(id_conta_origem, id_conta_destino, valor)
+    except Exception as e:
+        # Reverter a transferência em caso de falha na notificação
+        for conta in contas:
+            if conta.id == id_conta_origem:
+                conta.saldo += valor
+            if conta.id == id_conta_destino:
+                conta.saldo -= valor
+        raise e
+    return True
+
+# Função para notificar pagamento
+def notificar_pagamento(id_conta_origem, id_conta_destino, valor):
+    notificacao = {
+        "origem": str(id_conta_origem),
+        "destino": str(id_conta_destino),
+        "valor": valor
+    }
+    response = requests.post("https://run.mocky.io/v3/9769bf3a-b0b6-477a-9ff5-91f63010c9d3", json=notificacao)
+    if response.status_code != 200:
+        raise ConnectionError("Falha ao enviar notificação.")
+
+# Função principal para executar o script
+def main():
+    # Cadastrar clientes
+    id_cliente1 = cadastrar_cliente("João Silva", "12345678901", "Rua A, 123", "senha123", "PF")
+    id_cliente2 = cadastrar_cliente("Empresa XYZ", "12345678000101", "Av. B, 456", "senhaXYZ", "PJ")
+
+    # Abrir contas para os clientes
+    id_conta1 = abrir_conta(id_cliente1, "0001", 1000.0)
+    id_conta2 = abrir_conta(id_cliente2, "0002", 2000.0)
+
+    # Realizar transferência
+    try:
+        realizar_transferencia(id_conta1, id_conta2, 500.0)
+        print("Transferência realizada com sucesso!")
+    except Exception as e:
+        print(f"Erro na transferência: {e}")
+
+if __name__ == "__main__":
+    main()
